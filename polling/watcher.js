@@ -4,8 +4,9 @@
  * 监听事件
  */
 class Watcher {
-  constructor(id, name, handler) {
+  constructor({ id, name, resourceId = '', handler }) {
     this.id = id;
+    this.resourceId = resourceId;
     this.name = name;
     this.handler = handler;
     this.createAt = +new Date();

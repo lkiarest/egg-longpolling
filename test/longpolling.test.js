@@ -43,14 +43,20 @@ describe('test/longpolling.test.js', () => {
       });
   });
 
-  it('should fail with duplicate subscription', () => {
+  it('should GET complex event', () => {
+    setTimeout(() => {
+      app.polling.publish('complex', 'qtx');
+    }, 2000);
+
     return app.httpRequest()
-      .get('/longpolling/1/test?appKey=xxx')
-      .expect(400)
-      .expect('重复订阅事件: test');
+      .get('/longpolling/3/complex?username=qtx')
+      .expect(200)
+      .expect(res => {
+        assert.deepEqual(res.body, { name: 'complex', update: 1 });
+      });
   });
 
-  it('should GET with duplicate subscription', () => {
+  it('should fail with duplicate subscription', () => {
     return app.httpRequest()
       .get('/longpolling/1/test?appKey=xxx')
       .expect(400)
@@ -60,7 +66,7 @@ describe('test/longpolling.test.js', () => {
   it('should GET timeout without event', () => {
     setTimeout(() => {
       app.runSchedule(path.resolve(__dirname, '../app/schedule', 'recycle.js'));
-    }, 20000);
+    }, 10000);
 
     return app.httpRequest()
       .get('/longpolling/2/test?appKey=xxx')

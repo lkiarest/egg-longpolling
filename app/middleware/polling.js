@@ -10,6 +10,19 @@ module.exports = (options, app) => {
   const subscriptionPath = `${basePath}subscription`;
   const unsubscriptionPath = `${basePath}unsubscription/`;
 
+  // key-value 格式，方便后续处理
+  const subjectMap = subjects.reduce((ret, item) => {
+    if (typeof item === 'string') {
+      ret[item] = { simple: true, name: item };
+    } else if (Array.isArray(item) && item.length === 2) {
+      ret[item[0]] = { simple: false, name: item[0], option: item[1] };
+    } else {
+      console.warn('longpolling subjects should be a string or an array !');
+    }
+
+    return ret;
+  }, {});
+
   /**
    * 获取订阅 id
    * @param {Object} ctx 请求上下文
@@ -49,13 +62,24 @@ module.exports = (options, app) => {
     }
 
     const [ , id, name ] = matched;
+    const subject = subjectMap[name];
 
-    if (!subjects.includes(name)) {
+    if (!subject) {
       next();
       return;
     }
 
-    return app.polling.subscribe({ name, id, ctx }).catch(e => {
+    // 是否有不同客户端对资源请求不同的区分
+    let resourceId = '';
+
+    if ((!subject.simple)
+      && subject.option
+      && subject.option.resourceId
+      && typeof subject.option.resourceId === 'function') {
+      resourceId = subject.option.resourceId(ctx.query);
+    }
+
+    return app.polling.subscribe({ name: subject.name, resourceId, id, ctx }).catch(e => {
       ctx.body = e.message;
       ctx.status = 400;
     });

@@ -17,14 +17,16 @@ class Polling {
    * 订阅事件
    * @param {Object} param0 订阅事件所需信息
    */
-  subscribe({ id, name, ctx }) {
+  subscribe({ id, name, resourceId, ctx }) {
     // 此客户端重复注册同样的事件
     if (this.watchers.some(watcher => watcher.equals({ id, name }))) {
       return Promise.reject(new Error(`重复订阅事件: ${name}`));
     }
 
     // redis.subscribe(name, new Handler(fn, ctx));
-    return new Promise(resolve => this.watchers.push(new Watcher(id, name, new Handler(name, ctx, resolve))));
+    return new Promise(resolve => this.watchers.push(new Watcher({
+      id, name, resourceId, handler: new Handler(name, ctx, resolve),
+    })));
   }
 
   /**
@@ -50,15 +52,16 @@ class Polling {
   /**
    * 事件触发
    * @param {String} name 事件名称
+   * @param {String} resourceId 请求资源的唯一标识
    */
-  publish(name) {
+  publish(name, resourceId = '') {
     if (Array.isArray(name)) {
       name.forEach(item => this.publish(item));
       return;
     }
 
     this.watchers.forEach(watcher => {
-      if (watcher.name === name) {
+      if (watcher.name === name && watcher.resourceId === resourceId) {
         watcher.notify();
       }
     });

@@ -43,27 +43,37 @@ exports.longpolling = {
 ```js
 // {app_root}/config/config.default.js
 exports.longpolling = {
-  subjects: [ 'test' ],      // 可订阅的事件名称，需要在业务中调用 publish 触发此事件
-  basePath: '/longpolling/', // 订阅相关的请求，如 /longpolling/1/test
-  timeout: 30,               // 订阅连接超时时间，单位为秒
+  // 可订阅的事件名称，需要在业务中调用 publish 触发此事件,支持两种格式定义：
+  // 1. 简单的字符串，可直接使用 publish(eventName) 触发
+  // 2. 包含资源 id 区分关心的资源，触发时需要附加参数： publish(eventName, resourceId)
+  subjects: [ 'event1',  ['event2', { resourceId: ({ category }) => category }]],
+  // 订阅相关的请求，如 /longpolling/1/test
+  basePath: '/longpolling/',
+  // 订阅连接超时时间，单位为秒
+  timeout: 30,
 };
 ```
 
 see [config/config.default.js](config/config.default.js) for more detail.
 
 ## Example
-backend 触发事件:
+backend:
 ```js
 app.polling.publish('test'); // 单个事件
-app.polling.publish([ 'test1', 'test2' ]); // 批量事件
+app.polling.publish([ 'test1', 'test2' ]); // 批量事件，只支持简单格式
+app.polling.publish('complex', 'book'); // 通知只关心 book 类的资源
 ```
 
-frontend 前端请求:
+frontend:
 ```js
 async run() {
   const {id} = await fetch('/longpolling/subscription') // response: { id: 1}
   // start to listen
   const result = await fetch('/longpolling/1/test)
+
+  // or fetch with complex type
+  // const result = await fetch('/longpolling/2/complex?category=book)
+
   // after event emit or timeout, will get response
   console.log(result) // { name: 'test', update: 1 } or { name: 'test', timeout: 1 }
   // TODO: start next listen ...
@@ -72,7 +82,7 @@ async run() {
 
 ## Questions & Suggestions
 
-Please open an issue [here](https://github.com/eggjs/egg/issues).
+Please open an issue [here](https://github.com/lkiarest/egg-longpolling/issues).
 
 ## License
 
