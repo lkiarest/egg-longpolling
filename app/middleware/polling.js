@@ -104,6 +104,6 @@ module.exports = (options, app) => {
       await subscribe(ctx, next);
     }
 
-    next();
+    await next();
   };
 };
