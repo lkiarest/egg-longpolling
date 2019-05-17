@@ -69,7 +69,7 @@ frontend:
 async run() {
   const {id} = await fetch('/longpolling/subscription') // response: { id: 1}
   // start to listen
-  const result = await fetch('/longpolling/1/test)
+  const result = await fetch('/longpolling/1/test')
 
   // or fetch with complex type
   // const result = await fetch('/longpolling/2/complex?category=book)
