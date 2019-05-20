@@ -28,9 +28,11 @@ module.exports = (options, app) => {
    * @param {Object} ctx 请求上下文
    */
   const getSubId = ctx => {
-    ctx.body = JSON.stringify({
+    ctx.set('Content-Type', 'application/json');
+
+    ctx.body = {
       id: app.polling.genSubId(),
-    });
+    };
   };
 
   /**
@@ -38,7 +40,7 @@ module.exports = (options, app) => {
    * @param {Object} ctx 请求上下文
    */
   const unsubscribe = async ctx => {
-    const id = ctx.path.replace(unsubscriptionPath);
+    const id = ctx.path.replace(unsubscriptionPath, '');
 
     if (isNaN(id)) {
       ctx.status = 400;
@@ -102,6 +104,7 @@ module.exports = (options, app) => {
 
       // 执行订阅流程
       await subscribe(ctx, next);
+      return;
     }
 
     await next();

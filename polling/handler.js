@@ -14,23 +14,24 @@ class Handler {
     const { name, ctx } = this;
 
     ctx.body = { ...result, name };
+    ctx.set('Content-Type', 'application/json');
     ctx.status = 200;
 
-    this.done();
+    await this.done();
   }
 
   // 数据更新
-  async exec() {
+  exec() {
     return this.sendRes({ update: 1 });
   }
 
   // 取消监听
-  async cancel() {
+  cancel() {
     return this.sendRes({ cancel: 1 });
   }
 
   // 连接超时
-  async timeout() {
+  timeout() {
     return this.sendRes({ timeout: 1 });
   }
 }

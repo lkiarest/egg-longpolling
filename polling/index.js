@@ -17,23 +17,25 @@ class Polling {
    * 订阅事件
    * @param {Object} param0 订阅事件所需信息
    */
-  subscribe({ id, name, resourceId, ctx }) {
+  async subscribe({ id, name, resourceId, ctx }) {
     // 此客户端重复注册同样的事件
     if (this.watchers.some(watcher => watcher.equals({ id, name }))) {
       return Promise.reject(new Error(`重复订阅事件: ${name}`));
     }
 
     // redis.subscribe(name, new Handler(fn, ctx));
-    return new Promise(resolve => this.watchers.push(new Watcher({
+    const p = new Promise(resolve => this.watchers.push(new Watcher({
       id, name, resourceId, handler: new Handler(name, ctx, resolve),
     })));
+
+    return p;
   }
 
   /**
    * 取消订阅，若无参数则取消所有订阅事件
    * @param {String} id 订阅 id
    */
-  unsubscribe(id) {
+  async unsubscribe(id) {
     if (typeof id === 'undefined') {
       this.watchers.forEach(watcher => watcher.unwatch());
       this.watchers = [];
@@ -43,10 +45,11 @@ class Polling {
     const { watchers } = this;
     for (let i = watchers.length - 1; i >= 0; i--) {
       if (watchers[i].id === id) {
-        watchers[i].unwatch();
+        await watchers[i].unwatch();
         watchers.splice(i, 1);
       }
     }
+
   }
 
   /**
@@ -54,17 +57,23 @@ class Polling {
    * @param {String} name 事件名称
    * @param {String} resourceId 请求资源的唯一标识
    */
-  publish(name, resourceId = '') {
+  async publish(name, resourceId = '') {
     if (Array.isArray(name)) {
       name.forEach(item => this.publish(item));
       return;
     }
 
-    this.watchers.forEach(watcher => {
+    const { watchers } = this;
+
+    for (let i = watchers.length - 1; i >= 0; i--) {
+      const watcher = watchers[i];
+
       if (watcher.name === name && watcher.resourceId === resourceId) {
-        watcher.notify();
+        await watcher.notify();
+        watchers.splice(i, 1);
       }
-    });
+    }
+
   }
 
   /**
@@ -77,7 +86,7 @@ class Polling {
   /**
    * 检查超时请求并回收资源
    */
-  recycle() {
+  async recycle() {
     const { watchers, app } = this;
     const timeout = app.config.longpolling.timeout * 1000;
     const now = +new Date();
@@ -86,7 +95,7 @@ class Polling {
       const watcher = watchers[i];
 
       if (now - watcher.createAt >= timeout) {
-        watcher.timeout();
+        await watcher.timeout();
         watchers.splice(i, 1);
       }
     }

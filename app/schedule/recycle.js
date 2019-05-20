@@ -14,7 +14,7 @@ module.exports = app => {
     },
     async task(ctx) {
       const { app } = ctx;
-      app.polling.recycle();
+      await app.polling.recycle();
     },
   };
 };
