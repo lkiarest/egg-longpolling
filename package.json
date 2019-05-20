@@ -1,6 +1,6 @@
 {
   "name": "egg-longpolling",
-  "version": "0.2.2-rc.2",
+  "version": "0.2.2",
   "description": "",
   "eggPlugin": {
     "name": "longpolling",
