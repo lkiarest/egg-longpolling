@@ -27,11 +27,11 @@ module.exports = (options, app) => {
    * 获取订阅 id
    * @param {Object} ctx 请求上下文
    */
-  const getSubId = ctx => {
+  const getSubId = async ctx => {
     ctx.set('Content-Type', 'application/json');
 
     ctx.body = {
-      id: app.polling.genSubId(),
+      id: await app.polling.genSubId(),
     };
   };
 
@@ -46,7 +46,10 @@ module.exports = (options, app) => {
       ctx.status = 400;
       ctx.body = `无效的订阅 id: ${id}`;
     } else {
-      await app.polling.unsubscribe(id);
+      // 多进程模型中，需要在所有 worker 中查找 id 进行取消订阅操作
+      ctx.app.messenger.sendToApp('unsubscribe', id);
+      // ctx.app.polling.unsubscribe(id);
+      ctx.body = { id };
     }
   };
 
@@ -92,13 +95,13 @@ module.exports = (options, app) => {
     if (requestPath.startsWith(basePath)) {
       // 获取订阅 id 作为后续订阅标识
       if (requestPath === subscriptionPath) {
-        getSubId(ctx);
+        await getSubId(ctx);
         return;
       }
 
       // 取消订阅请求
       if (requestPath.startsWith(unsubscriptionPath)) {
-        await unsubscribe(ctx);
+        unsubscribe(ctx);
         return;
       }
 

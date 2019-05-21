@@ -11,10 +11,11 @@ module.exports = app => {
       type: 'worker',
       // 无可订阅主题，不启动定时器
       disable: app.config.longpolling.subjects.length === 0,
+      immediate: false,
     },
     async task(ctx) {
-      const { app } = ctx;
-      await app.polling.recycle();
+      // await app.polling.recycle();
+      ctx.app.messenger.sendToApp('recycle', +new Date());
     },
   };
 };
